@@ -6,10 +6,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { compare } from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(UserEntity) private userRepository: Repository<UserEntity>) {}
+  constructor(
+    @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
+    private jwtService: JwtService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const user = await this.userRepository.findOne({ email: createUserDto.email });
@@ -23,7 +28,7 @@ export class UserService {
     return this.userRepository.save(newUser);
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<UserEntity> {
+  async login(loginUserDto: LoginUserDto, response: Response): Promise<UserEntity> {
     const user = await this.userRepository.findOne(
       { email: loginUserDto.email },
       { select: ['id', 'name', 'email', 'password'] },
@@ -37,8 +42,18 @@ export class UserService {
     if (!match) {
       throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
     }
+
     // do not return password to the client
     delete user.password;
+
+    const token = this.jwtService.sign({ user });
+    response
+      .cookie('access_token', token, {
+        httpOnly: true,
+        domain: 'localhost', // your domain here!
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      })
+      .json(user);
 
     return user;
   }
