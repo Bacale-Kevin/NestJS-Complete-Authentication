@@ -18,6 +18,12 @@ export class UserEntity {
   @Column({ default: '' })
   image: string;
 
+  @Column({ nullable: true, name: 'refreshtoken' })
+  refreshToken: string;
+
+  @Column({ type: 'date', nullable: true, name: 'refreshtokenexp' })
+  refreshTokenExp: string;
+
   @BeforeInsert()
   async hashPassword() {
     this.password = await hash(this.password, 10);

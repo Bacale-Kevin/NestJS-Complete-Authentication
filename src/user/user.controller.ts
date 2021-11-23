@@ -10,13 +10,14 @@ import {
   ValidationPipe,
   Res,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('api')
@@ -32,13 +33,12 @@ export class UserController {
   @Post('login')
   @UsePipes(new ValidationPipe())
   async login(@Body() loginUserDto: LoginUserDto, @Res() response: Response): Promise<UserEntity> {
-    
     return await this.userService.login(loginUserDto, response);
   }
 
-  @Get()
+  @Get('users')
   @UseGuards(AuthGuard('jwt'))
-  findAll() {
+  findAll(@Req() req: Request) {
     return this.userService.findAll();
   }
 

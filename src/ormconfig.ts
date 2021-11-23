@@ -9,7 +9,7 @@ const config: ConnectionOptions = {
   password: 'bacale',
   database: 'cookie-auth',
   synchronize: false,
-  entities: [path.join(__dirname, '**/*.entity{.ts,.js}')],
+  entities: [path.join(__dirname, '**/*.entity{.js,.ts}')],
   migrations: [path.join(__dirname + '/migrations/**/*{.ts,.js}')],
   cli: {
     migrationsDir: 'src/migrations',

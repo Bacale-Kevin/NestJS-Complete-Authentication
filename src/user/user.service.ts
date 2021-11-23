@@ -16,6 +16,7 @@ export class UserService {
     private jwtService: JwtService,
   ) {}
 
+  /**Register User */
   async create(createUserDto: CreateUserDto): Promise<UserEntity> {
     const user = await this.userRepository.findOne({ email: createUserDto.email });
 
@@ -28,6 +29,7 @@ export class UserService {
     return this.userRepository.save(newUser);
   }
 
+  /**Login User */
   async login(loginUserDto: LoginUserDto, response: Response): Promise<UserEntity> {
     const user = await this.userRepository.findOne(
       { email: loginUserDto.email },
@@ -46,6 +48,7 @@ export class UserService {
     // do not return password to the client
     delete user.password;
 
+    //respond with a generated cookie
     const token = this.jwtService.sign({ user });
     response
       .cookie('access_token', token, {
