@@ -11,6 +11,7 @@ import {
   Res,
   UseGuards,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -31,6 +32,7 @@ export class UserController {
     return await this.userService.create(createUserDto);
   }
 
+  @HttpCode(200)
   @Post('login')
   @UsePipes(new ValidationPipe())
   async login(@Body() loginUserDto: LoginUserDto, @Res() response: Response): Promise<UserEntity> {
@@ -45,8 +47,9 @@ export class UserController {
 
   @Get('users')
   @UseGuards(AuthGuard('jwt'))
-  findAll(@Req() req: Request) {
-    return this.userService.findAll();
+  async findAll(@Req() req: Request): Promise<any> {
+    // console.log(req.user);
+    return await this.userService.findAll();
   }
 
   @Get(':id')

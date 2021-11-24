@@ -78,7 +78,7 @@ export class UserService {
     return 'req';
   }
 
-  findAll() {
+  async findAll(): Promise<any> {
     return `This action returns all user`;
   }
 
@@ -103,4 +103,29 @@ export class UserService {
   // async getRefreshToken(userId: number): Promise<string> {
   //   const user = await this.userRepository.findOne();
   // }
+
+  async validateUser(email: string, pass: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOne(
+      { email },
+      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
+    );
+    if (!user) {
+      throw new HttpException('Invalid login credentials', HttpStatus.BAD_REQUEST);
+    }
+
+    const match = await compare(pass, user.password);
+
+    if (!match) {
+      throw new HttpException('Invalid login credentials', HttpStatus.BAD_REQUEST);
+    }
+
+    return user;
+  }
+
+  async getJwtToken(user: UserEntity): Promise<string> {
+    const payload = {
+      ...user,
+    };
+    return this.jwtService.sign({ payload });
+  }
 }
