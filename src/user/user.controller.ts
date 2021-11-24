@@ -19,6 +19,7 @@ import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { ExpresRequest } from '../types/expressRequest.interface';
 
 @Controller('api')
 export class UserController {
@@ -34,6 +35,12 @@ export class UserController {
   @UsePipes(new ValidationPipe())
   async login(@Body() loginUserDto: LoginUserDto, @Res() response: Response): Promise<UserEntity> {
     return await this.userService.login(loginUserDto, response);
+  }
+
+  @Get('refresh-token')
+  @UseGuards(AuthGuard('refresh'))
+  async refreshToken(@Req() req: ExpresRequest): Promise<any> {
+    return this.userService.getRefreshToken(req);
   }
 
   @Get('users')

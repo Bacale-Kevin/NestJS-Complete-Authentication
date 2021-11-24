@@ -5,9 +5,12 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
-import { compare } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
+import * as randomToken from 'rand-token';
+import * as moment from 'moment';
+import { ExpresRequest } from '../types/expressRequest.interface';
 
 @Injectable()
 export class UserService {
@@ -33,7 +36,7 @@ export class UserService {
   async login(loginUserDto: LoginUserDto, response: Response): Promise<UserEntity> {
     const user = await this.userRepository.findOne(
       { email: loginUserDto.email },
-      { select: ['id', 'name', 'email', 'password'] },
+      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
     );
 
     if (!user)
@@ -46,7 +49,17 @@ export class UserService {
     }
 
     // do not return password to the client
-    delete user.password;
+    // delete user.password;
+
+    const refreshToken = this.jwtService.sign(
+      { user },
+      {
+        secret: 'super secret jwt token',
+        expiresIn: '3d',
+      },
+    );
+    // user.refreshToken = await hash(refreshToken, 10);
+    user.refreshToken = refreshToken;
 
     //respond with a generated cookie
     const token = this.jwtService.sign({ user });
@@ -54,19 +67,29 @@ export class UserService {
       .cookie('access_token', token, {
         httpOnly: true,
         domain: 'localhost', // your domain here!
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
       })
       .json(user);
 
     return user;
   }
 
+  async getRefreshToken(req: ExpresRequest): Promise<any> {
+    // console.log('request --> ', req.user);
+    return 'req';
+  }
+
   findAll() {
     return `This action returns all user`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({ id });
+
+    if (!user) {
+      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    }
+    delete user.password;
+    return user;
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
@@ -76,4 +99,8 @@ export class UserService {
   remove(id: number) {
     return `This action removes a #${id} user`;
   }
+
+  // async getRefreshToken(userId: number): Promise<string> {
+  //   const user = await this.userRepository.findOne();
+  // }
 }

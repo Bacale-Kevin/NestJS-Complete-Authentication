@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthStrategy } from './auth/auth.strategy';
+import { RefreshStrategy } from './auth/refresh.strategy';
 
 @Module({
   imports: [
@@ -12,11 +13,11 @@ import { AuthStrategy } from './auth/auth.strategy';
     JwtModule.register({
       secret: 'super secret jwt token',
       signOptions: {
-        expiresIn: '24h',
+        expiresIn: 30,
       },
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, AuthStrategy],
+  providers: [UserService, AuthStrategy, RefreshStrategy],
 })
 export class UserModule {}
