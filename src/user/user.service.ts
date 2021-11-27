@@ -42,17 +42,17 @@ export class UserService {
     if (!user)
       throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
 
+    /** compare password */
     const match = await compare(loginUserDto.password, user.password);
 
-    if (!match) {
+    if (!match)
       throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
-    }
 
     // do not return password to the client
     // delete user.password;
-
+    // const { id } = user;
     const refreshToken = this.jwtService.sign(
-      { user },
+      { id: user.id },
       {
         secret: 'super secret jwt token',
         expiresIn: '3d',
@@ -62,7 +62,7 @@ export class UserService {
     user.refreshToken = refreshToken;
 
     //respond with a generated cookie
-    const token = this.jwtService.sign({ user });
+    const token = this.jwtService.sign({ user: user });
     response
       .cookie('access_token', token, {
         httpOnly: true,

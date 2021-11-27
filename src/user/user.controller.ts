@@ -47,8 +47,8 @@ export class UserController {
 
   @Get('users')
   @UseGuards(AuthGuard('jwt'))
-  async findAll(@Req() req: Request): Promise<any> {
-    // console.log(req.user);
+  async findAll(@Req() req: ExpresRequest): Promise<any> {
+    console.log(req.user.email);
     return await this.userService.findAll();
   }
 
