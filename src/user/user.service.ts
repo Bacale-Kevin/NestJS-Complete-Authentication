@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -33,44 +33,32 @@ export class UserService {
   }
 
   /**Login User */
-  async login(loginUserDto: LoginUserDto, response: Response): Promise<UserEntity> {
-    const user = await this.userRepository.findOne(
-      { email: loginUserDto.email },
-      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
-    );
-
-    if (!user)
-      throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
-
-    /** compare password */
-    const match = await compare(loginUserDto.password, user.password);
-
-    if (!match)
-      throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
-
-    // do not return password to the client
-    // delete user.password;
-    // const { id } = user;
-
-    const token = await this.getJwtToken(user);
-    const refreshToken = await this.getRefreshToken(user.id);
-
-    user.refreshToken = refreshToken;
-
-    const secretData = {
-      token,
-      refreshToken: refreshToken,
-    };
-    response
-      .cookie('access_token', secretData, {
-        httpOnly: true,
-        domain: 'localhost', // your domain here!
-      })
-      .json(user);
-
-    await this.userRepository.save(user);
-
-    return user;
+  async login(loginUserDto: LoginUserDto, response: Response): Promise<any> {
+    // const user = await this.userRepository.findOne(
+    //   { email: loginUserDto.email },
+    //   { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
+    // );
+    // if (!user)
+    //   throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
+    // /** compare password */
+    // const match = await compare(loginUserDto.password, user.password);
+    // if (!match)
+    //   throw new HttpException('Invalid email or password', HttpStatus.UNPROCESSABLE_ENTITY);
+    // const token = await this.getJwtToken(user);
+    // const refreshToken = await this.getRefreshToken(user.id);
+    // user.refreshToken = refreshToken;
+    // const secretData = {
+    //   token,
+    //   refreshToken: refreshToken,
+    // };
+    // response
+    //   .cookie('access_token', secretData, {
+    //     httpOnly: true,
+    //     domain: 'localhost', // your domain here!
+    //   })
+    //   .json(user);
+    // await this.userRepository.save(user);
+    // return user;
   }
 
   async findAll(): Promise<any> {

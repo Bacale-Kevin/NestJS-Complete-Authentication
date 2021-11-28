@@ -1,6 +1,6 @@
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UserEntity } from './../entities/user.entity';
 import { UserService } from './../user.service';
 
@@ -11,6 +11,9 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
   }
 
   async validate(email: string, password: string): Promise<UserEntity> {
+    if (!email) throw new BadRequestException('email cannot be empty');
+    if (!password) throw new BadRequestException('password cannot be empty');
+
     const user = await this.userService.validateUserCredentials(email, password);
 
     if (user === null) {

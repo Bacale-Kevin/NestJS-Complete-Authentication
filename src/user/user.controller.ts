@@ -34,8 +34,7 @@ export class UserController {
 
   @HttpCode(200)
   @Post('login')
-  @UsePipes(new ValidationPipe())
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(AuthGuard('local')) //strategy use to handle login request
   async login(@Req() req: ExpresRequest, @Res({ passthrough: true }) res: Response): Promise<any> {
     const token = await this.userService.getJwtToken(req.user);
     const refreshToken = await this.userService.getRefreshToken(req.user.id);
@@ -45,11 +44,13 @@ export class UserController {
       refreshToken: refreshToken,
     };
     res.cookie('access_token', secretData, { httpOnly: true });
-    return { msg: 'success' };
+    const user = await this.userService.findOne(req.user.id);
+
+    return { id: user.id, email: user.email, name: user.name, image: user.image };
   }
 
   @Get('refresh-token')
-  @UseGuards(AuthGuard('refresh'))
+  @UseGuards(AuthGuard('refresh')) //strategy use to refresh token
   async refreshToken(
     @Req() req: ExpresRequest,
     @Res({ passthrough: true }) res: Response,
@@ -66,7 +67,7 @@ export class UserController {
   }
 
   @Get('users')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt')) //strategy use to require signin
   async findAll(@Req() req: ExpresRequest): Promise<any> {
     return await this.userService.findAll();
   }
