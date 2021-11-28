@@ -7,10 +7,6 @@ import { ExpresRequest } from '../../types/expressRequest.interface';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-type Payload = {
-  user: UserEntity;
-};
-
 @Injectable()
 export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
   /**
@@ -23,8 +19,11 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: ExpresRequest) => {
-          const secretData = request?.cookies['access_token'];
-          return secretData;
+          const data = request?.cookies['access_token'];
+          if (!data) {
+            return null;
+          }
+          return data.token;
         },
       ]),
       ignoreExpiration: true, //is set to true beacuse we know that the token is expired
@@ -33,20 +32,19 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
     });
   }
 
-  async validate(req: ExpresRequest, data: Payload): Promise<UserEntity> {
-    console.log('refresh payload --> ', data);
-    const secretData = req?.cookies['access_token'];
+  async validate(req: ExpresRequest, payload: any): Promise<UserEntity> {
+    if (!payload) {
+      throw new BadRequestException('invalid jwt token');
+    }
 
-    if (!secretData) throw new BadRequestException();
+    const data = req?.cookies['access_token'];
+    if (!data?.refreshToken) {
+      throw new BadRequestException('invalid refresh token');
+    }
 
-    // if (!secretData.refreshToken) throw new BadRequestException();
+    const user = await this.userService.validateRefreshToken(payload.email, data.refreshToken);
 
-    const user = await this.userService.validateRefreshToken(
-      data.user.email,
-      data.user.refreshToken,
-    );
-
-    if (!user) throw new BadRequestException();
+    if (!user) throw new BadRequestException('token expired');
 
     return user;
   }

@@ -35,8 +35,17 @@ export class UserController {
   @HttpCode(200)
   @Post('login')
   @UsePipes(new ValidationPipe())
-  async login(@Body() loginUserDto: LoginUserDto, @Res() response: Response): Promise<UserEntity> {
-    return await this.userService.login(loginUserDto, response);
+  @UseGuards(AuthGuard('local'))
+  async login(@Req() req: ExpresRequest, @Res({ passthrough: true }) res: Response): Promise<any> {
+    const token = await this.userService.getJwtToken(req.user);
+    const refreshToken = await this.userService.getRefreshToken(req.user.id);
+
+    const secretData = {
+      token,
+      refreshToken: refreshToken,
+    };
+    res.cookie('access_token', secretData, { httpOnly: true });
+    return { msg: 'success' };
   }
 
   @Get('refresh-token')
@@ -46,11 +55,11 @@ export class UserController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
     const token = await this.userService.getJwtToken(req.user);
-    const refresToken = await this.userService.getRefreshToken(req.user.id);
+    const refreshToken = await this.userService.getRefreshToken(req.user.id);
 
     const secretData = {
       token,
-      refreshToken: refresToken,
+      refreshToken: refreshToken,
     };
     res.cookie('access_token', secretData, { httpOnly: true });
     return { message: 'sucess' };
@@ -59,7 +68,6 @@ export class UserController {
   @Get('users')
   @UseGuards(AuthGuard('jwt'))
   async findAll(@Req() req: ExpresRequest): Promise<any> {
-    // console.log(req.user);
     return await this.userService.findAll();
   }
 

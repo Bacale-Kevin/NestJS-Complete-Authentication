@@ -5,37 +5,30 @@ import { UserEntity } from './../entities/user.entity';
 import { ExpresRequest } from '../../types/expressRequest.interface';
 import { UserService } from './../user.service';
 
-type Payload = {
-  user: UserEntity;
-};
-
 @Injectable()
 export class AuthStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private readonly userService: UserService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: ExpresRequest) => {
-          return request?.cookies.access_token;
+          const data = request?.cookies['access_token'];
+          if (!data) {
+            return null;
+          }
+
+          return data.token; //payload inside the token is been decoded auto by passport
         },
       ]),
       ignoreExpiration: false,
       secretOrKey: 'super secret jwt token',
-      passReqToCallback: true,
+      // passReqToCallback: true,
     });
   }
 
-  async validate(_: ExpresRequest, data: Payload): Promise<UserEntity> {
-    console.log('auth payload --> ', data);
-    if (!data) {
+  async validate(payload: any): Promise<UserEntity> {
+    if (payload === null) {
       throw new UnauthorizedException();
     }
-
-    const user = await this.userService.findOne(data.user.id);
-
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    return user;
+    return payload;
   }
 }

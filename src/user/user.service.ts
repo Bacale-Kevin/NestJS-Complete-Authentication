@@ -55,6 +55,8 @@ export class UserService {
     const token = await this.getJwtToken(user);
     const refreshToken = await this.getRefreshToken(user.id);
 
+    user.refreshToken = refreshToken;
+
     const secretData = {
       token,
       refreshToken: refreshToken,
@@ -119,7 +121,7 @@ export class UserService {
     const payload = {
       ...user,
     };
-    return this.jwtService.sign({ payload });
+    return this.jwtService.signAsync(payload);
   }
 
   async getRefreshToken(userId: number): Promise<string> {
@@ -154,5 +156,24 @@ export class UserService {
     User.image = user.image;
 
     return User;
+  }
+
+  async validateUserCredentials(email: string, password: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOne(
+      { email },
+      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
+    );
+
+    if (!user || user === null) {
+      return null;
+    }
+
+    const match = await compare(password, user.password);
+
+    if (!match) {
+      return null;
+    }
+
+    return user;
   }
 }

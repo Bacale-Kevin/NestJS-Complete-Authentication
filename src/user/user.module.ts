@@ -6,6 +6,7 @@ import { UserEntity } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthStrategy } from './auth/auth.strategy';
 import { RefreshStrategy } from './auth/refresh.strategy';
+import { LocalStrategy } from './auth/local.strategy';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { RefreshStrategy } from './auth/refresh.strategy';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, AuthStrategy, RefreshStrategy],
+  providers: [UserService, AuthStrategy, RefreshStrategy, LocalStrategy],
 })
 export class UserModule {}
