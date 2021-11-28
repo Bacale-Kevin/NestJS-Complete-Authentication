@@ -22,7 +22,7 @@ import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { ExpresRequest } from '../types/expressRequest.interface';
 
-@Controller('api')
+@Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
