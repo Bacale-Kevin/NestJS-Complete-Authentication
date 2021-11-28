@@ -1,14 +1,11 @@
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
-import { Request } from 'express';
 import { UserEntity } from './../entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ExpresRequest } from '../../types/expressRequest.interface';
 import { UserService } from './../user.service';
 
-type payload = {
+type Payload = {
   user: UserEntity;
 };
 
@@ -27,12 +24,13 @@ export class AuthStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(_: ExpresRequest, data: payload): Promise<any> {
+  async validate(_: ExpresRequest, data: Payload): Promise<UserEntity> {
+    console.log('auth payload --> ', data);
     if (!data) {
       throw new UnauthorizedException();
     }
 
-    const user = this.userService.findOne(data.user.id);
+    const user = await this.userService.findOne(data.user.id);
 
     if (!user) {
       throw new UnauthorizedException();

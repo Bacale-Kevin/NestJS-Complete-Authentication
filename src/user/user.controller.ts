@@ -41,14 +41,25 @@ export class UserController {
 
   @Get('refresh-token')
   @UseGuards(AuthGuard('refresh'))
-  async refreshToken(@Req() req: ExpresRequest): Promise<any> {
-    return this.userService.getRefreshToken(req);
+  async refreshToken(
+    @Req() req: ExpresRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<any> {
+    const token = await this.userService.getJwtToken(req.user);
+    const refresToken = await this.userService.getRefreshToken(req.user.id);
+
+    const secretData = {
+      token,
+      refreshToken: refresToken,
+    };
+    res.cookie('access_token', secretData, { httpOnly: true });
+    return { message: 'sucess' };
   }
 
   @Get('users')
   @UseGuards(AuthGuard('jwt'))
   async findAll(@Req() req: ExpresRequest): Promise<any> {
-    console.log(req.user.email);
+    // console.log(req.user);
     return await this.userService.findAll();
   }
 

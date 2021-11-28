@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
@@ -51,31 +51,24 @@ export class UserService {
     // do not return password to the client
     // delete user.password;
     // const { id } = user;
-    const refreshToken = this.jwtService.sign(
-      { id: user.id },
-      {
-        secret: 'super secret jwt token',
-        expiresIn: '3d',
-      },
-    );
-    // user.refreshToken = await hash(refreshToken, 10);
-    user.refreshToken = refreshToken;
 
-    //respond with a generated cookie
-    const token = this.jwtService.sign({ user: user });
+    const token = await this.getJwtToken(user);
+    const refreshToken = await this.getRefreshToken(user.id);
+
+    const secretData = {
+      token,
+      refreshToken: refreshToken,
+    };
     response
-      .cookie('access_token', token, {
+      .cookie('access_token', secretData, {
         httpOnly: true,
         domain: 'localhost', // your domain here!
       })
       .json(user);
 
-    return user;
-  }
+    await this.userRepository.save(user);
 
-  async getRefreshToken(req: ExpresRequest): Promise<any> {
-    // console.log('request --> ', req.user);
-    return 'req';
+    return user;
   }
 
   async findAll(): Promise<any> {
@@ -127,5 +120,39 @@ export class UserService {
       ...user,
     };
     return this.jwtService.sign({ payload });
+  }
+
+  async getRefreshToken(userId: number): Promise<string> {
+    const userDataToUpdate = {
+      refreshToken: randomToken.generate(16),
+      refreshTokenExp: moment().day(1).format('YYYY/MM/DD'),
+    };
+
+    await this.userRepository.update(userId, userDataToUpdate);
+    return userDataToUpdate.refreshToken;
+  }
+
+  async validateRefreshToken(email: string, refreshToken: string): Promise<UserEntity> {
+    const currentDate = moment().format('YYYY/MM/DD');
+
+    const user = await this.userRepository.findOne({
+      where: {
+        email: email,
+        refreshToken: refreshToken,
+        refreshTokenExp: MoreThanOrEqual(currentDate),
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const User = new UserEntity();
+    User.email = user.email;
+    User.id = user.id;
+    User.name = user.name;
+    User.image = user.image;
+
+    return User;
   }
 }
