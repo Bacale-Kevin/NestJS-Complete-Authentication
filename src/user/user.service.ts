@@ -11,6 +11,7 @@ import { Response } from 'express';
 import * as randomToken from 'rand-token';
 import * as moment from 'moment';
 import { ExpresRequest } from '../types/expressRequest.interface';
+import { sign } from 'jsonwebtoken';
 
 @Injectable()
 export class UserService {
@@ -28,6 +29,15 @@ export class UserService {
     }
 
     const newUser = await this.userRepository.create(createUserDto);
+
+    /**Generate a confirmation token code that will be use to validate users email address  */
+    const confirmationCodeToken = sign(
+      { email: createUserDto.email },
+      process.env.JWT_CONFIRMATION_TOKEN_SECRET,
+      { expiresIn: '3h' },
+    );
+
+    newUser.confirmationCode = confirmationCodeToken;
 
     return this.userRepository.save(newUser);
   }
@@ -149,7 +159,7 @@ export class UserService {
   async validateUserCredentials(email: string, password: string): Promise<UserEntity> {
     const user = await this.userRepository.findOne(
       { email },
-      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
+      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp', 'status'] },
     );
 
     if (!user || user === null) {
@@ -161,6 +171,9 @@ export class UserService {
     if (!match) {
       return null;
     }
+
+    if (user.status === 'pending')
+      throw new BadRequestException('please verify your email to activate your account');
 
     return user;
   }

@@ -12,7 +12,7 @@ import { LocalStrategy } from './auth/local.strategy';
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.register({
-      secret: 'super secret jwt token',
+      secret: process.env.JWT_SECRET,
       signOptions: {
         expiresIn: 30,
       },

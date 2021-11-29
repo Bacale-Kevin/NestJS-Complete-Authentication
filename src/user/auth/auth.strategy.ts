@@ -20,7 +20,7 @@ export class AuthStrategy extends PassportStrategy(Strategy, 'jwt') {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: 'super secret jwt token',
+      secretOrKey: process.env.JWT_SECRET,
       // passReqToCallback: true,
     });
   }

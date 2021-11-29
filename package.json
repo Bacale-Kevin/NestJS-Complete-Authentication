@@ -23,6 +23,7 @@
     "typeorm1": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config src/ormconfig.ts"
   },
   "dependencies": {
+    "@nestjs-modules/mailer": "^1.6.0",
     "@nestjs/common": "^8.0.0",
     "@nestjs/core": "^8.0.0",
     "@nestjs/jwt": "^8.0.0",
@@ -38,8 +39,10 @@
     "cookie-parser": "^1.4.6",
     "csurf": "^1.11.0",
     "express-jwt": "^6.1.0",
+    "handlebars": "^4.7.7",
     "jwt-decode": "^3.1.2",
     "moment": "^2.29.1",
+    "nodemailer": "^6.7.2",
     "passport": "^0.5.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
@@ -59,6 +62,7 @@
     "@types/express": "^4.17.13",
     "@types/jest": "^27.0.1",
     "@types/node": "^16.0.0",
+    "@types/nodemailer": "^6.4.4",
     "@types/passport-local": "^1.0.34",
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.0.0",

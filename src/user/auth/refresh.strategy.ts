@@ -27,7 +27,7 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
         },
       ]),
       ignoreExpiration: true, //is set to true beacuse we know that the token is expired
-      secretOrKey: 'super secret jwt token', //use for decrypting jwt
+      secretOrKey: process.env.JWT_SECRET, //use for decrypting jwt
       passReqToCallback: true,
     });
   }

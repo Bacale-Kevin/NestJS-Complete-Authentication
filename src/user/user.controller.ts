@@ -46,7 +46,13 @@ export class UserController {
     res.cookie('access_token', secretData, { httpOnly: true });
     const user = await this.userService.findOne(req.user.id);
 
-    return { id: user.id, email: user.email, name: user.name, image: user.image };
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      status: user.status,
+    };
   }
 
   @Get('refresh-token')
