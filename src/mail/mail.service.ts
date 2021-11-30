@@ -11,13 +11,13 @@ export class MailService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      from: process.env.MAIL_FROM,
+      from: `"No Reply" <process.env.NODEMAILER_SENDER_EMAIL>`,
       subject: 'Square Space - Account Verification',
       //template: 'templates/confirmation', // `.hbs` extension is appended automatically
-      html: `<h1>Email Confirmation</h1>
-      <h2>Hello ${user.name}</h2>
-      <p>Thank you for subscribing. Please confirm your email by clicking on the following link</p>
-      <a target='_' href=${process.env.CLIENT_DOMAIN}/register/confirm/${token}> Click here</a>
+      html: `<p>Hello <b>${user.name}</b></p>
+      <p>Your account have been created.</p>
+      <p>Please click on the link below in other to activate your account</p>
+      <a target='_' href=${process.env.CLIENT_DOMAIN}/register/confirm/${token}> <b>Click here</b></a>
       </div>`,
       //   context: {
       // ✏️ filling curly brackets with content
