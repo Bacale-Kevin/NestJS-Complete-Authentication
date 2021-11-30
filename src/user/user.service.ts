@@ -1,18 +1,24 @@
-import { HttpException, HttpStatus, Injectable, BadRequestException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  BadRequestException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
-import { compare, hash } from 'bcrypt';
+import { compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import * as randomToken from 'rand-token';
 import * as moment from 'moment';
-import * as Mail from 'nodemailer/lib/mailer';
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { MailService } from './../mail/mail.service';
+import jwtDecode from 'jwt-decode';
 
 @Injectable()
 export class UserService {
@@ -34,16 +40,16 @@ export class UserService {
 
     /**Generate a confirmation token code that will be use to validate users email address  */
     const confirmationCodeToken = sign(
-      { email: createUserDto.email },
+      { id: newUser.id, email: createUserDto.email },
       process.env.JWT_CONFIRMATION_TOKEN_SECRET,
-      { expiresIn: '3h' },
+      { expiresIn: '1h' },
     );
 
     newUser.confirmationCode = confirmationCodeToken;
 
     const savedNewUser = await this.userRepository.save(newUser);
 
-    /** 📧 👉 send email for user to activate account */
+    /** 📧 👇 send email for user to activate account */
     await this.mailService.sendUserConfirmation(savedNewUser, confirmationCodeToken);
     return savedNewUser;
   }
@@ -75,6 +81,16 @@ export class UserService {
     //   .json(user);
     // await this.userRepository.save(user);
     // return user;
+  }
+
+  /**Verify account token  */
+  async activateAccountAfterRegistration(token: string): Promise<any> {
+    verify(token, process.env.JWT_CONFIRMATION_TOKEN_SECRET, function (err, decoded) {
+      if (err) {
+        throw new UnprocessableEntityException('failed to verify activation link');
+      }
+      console.log(decoded);
+    });
   }
 
   async findAll(): Promise<any> {

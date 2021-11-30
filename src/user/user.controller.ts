@@ -26,12 +26,16 @@ import { ExpresRequest } from '../types/expressRequest.interface';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  /****************************** AUTHENTICATION **********************************/
+
+  /**Register */
   @Post('register')
   @UsePipes(new ValidationPipe())
   async create(@Body() createUserDto: CreateUserDto): Promise<UserEntity> {
     return await this.userService.create(createUserDto);
   }
 
+  /**Login */
   @HttpCode(200)
   @Post('login')
   @UseGuards(AuthGuard('local')) //strategy use to handle login request
@@ -55,6 +59,7 @@ export class UserController {
     };
   }
 
+  /**Refresh token */
   @Get('refresh-token')
   @UseGuards(AuthGuard('refresh')) //strategy use to refresh token
   async refreshToken(
@@ -72,6 +77,15 @@ export class UserController {
     return { message: 'sucess' };
   }
 
+  /**Activate account after registration */
+  @Get('register/confirm/:token')
+  async activateAccountAfterRegistration(@Param('token') token: string): Promise<any> {
+    await this.userService.activateAccountAfterRegistration(token);
+  }
+
+  /********************************************** USER **************************************/
+
+  /**Get all users */
   @Get('users')
   @UseGuards(AuthGuard('jwt')) //strategy use to require signin
   async findAll(@Req() req: ExpresRequest): Promise<any> {

@@ -7,8 +7,6 @@ export class MailService {
   constructor(private mailerService: MailerService) {}
 
   async sendUserConfirmation(user: UserEntity, token: string) {
-    const url = `${process.env.CLIENT_DOMAIN}/auth/confirm/${token}`;
-
     await this.mailerService.sendMail({
       to: user.email,
       from: `"No Reply" <process.env.NODEMAILER_SENDER_EMAIL>`,
