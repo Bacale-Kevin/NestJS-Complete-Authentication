@@ -14,7 +14,7 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, ResendEmailDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -79,8 +79,29 @@ export class UserController {
 
   /**Activate account after registration */
   @Get('register/confirm/:token')
-  async activateAccountAfterRegistration(@Param('token') token: string): Promise<any> {
+  async activateAccountAfterRegistration(
+    @Param('token') token: string,
+    @Res() res: Response,
+  ): Promise<any> {
     await this.userService.activateAccountAfterRegistration(token);
+
+    return res.json({ success: true, message: 'Account verified successfully please login' });
+  }
+
+  /**Resend account activation email address to user */
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  @Post('register/resend-email')
+  async resendVerificationEmail(
+    @Body() emailDto: ResendEmailDto,
+    @Res() res: Response,
+  ): Promise<any> {
+    await this.userService.resendVerificationEmail(emailDto);
+
+    return res.json({
+      success: true,
+      message: `Email sent to ${emailDto.email}, checkout your email inbox to activate your account`,
+    });
   }
 
   /********************************************** USER **************************************/

@@ -13,3 +13,8 @@ export class CreateUserDto {
 
   readonly image?: string;
 }
+
+export class ResendEmailDto {
+  @IsNotEmpty()
+  readonly email: string;
+}

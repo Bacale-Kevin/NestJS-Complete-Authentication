@@ -4,10 +4,11 @@ import {
   Injectable,
   BadRequestException,
   UnprocessableEntityException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, ResendEmailDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -85,12 +86,37 @@ export class UserService {
 
   /**Verify account token  */
   async activateAccountAfterRegistration(token: string): Promise<any> {
-    verify(token, process.env.JWT_CONFIRMATION_TOKEN_SECRET, function (err, decoded) {
-      if (err) {
-        throw new UnprocessableEntityException('failed to verify activation link');
-      }
-      console.log(decoded);
-    });
+    const decoded: any = verify(token, process.env.JWT_CONFIRMATION_TOKEN_SECRET);
+
+    if (!decoded) {
+      throw new UnprocessableEntityException('failed to verify activation link');
+    }
+
+    const user = await this.userRepository.findOne({ email: decoded.email });
+
+    user.status = 'active';
+    user.confirmationCode = '';
+
+    await this.userRepository.save(user);
+  }
+
+  async resendVerificationEmail(emailDto: ResendEmailDto): Promise<any> {
+    const user = await this.userRepository.findOne({ email: emailDto.email });
+
+    if (!user) throw new NotFoundException('User with this email does not exist');
+
+    /**Generate a confirmation token code that will be use to validate users email address  */
+    const confirmationCodeToken = sign(
+      { id: user.id, email: emailDto.email },
+      process.env.JWT_CONFIRMATION_TOKEN_SECRET,
+      { expiresIn: '1h' },
+    );
+    user.confirmationCode = confirmationCodeToken;
+
+    const savedUser = await this.userRepository.save(user);
+
+    /** 📧 👇 send email for user to activate account */
+    await this.mailService.sendUserConfirmation(savedUser, confirmationCodeToken);
   }
 
   async findAll(): Promise<any> {
