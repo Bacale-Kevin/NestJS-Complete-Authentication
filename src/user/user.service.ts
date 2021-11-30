@@ -10,14 +10,16 @@ import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import * as randomToken from 'rand-token';
 import * as moment from 'moment';
-import { ExpresRequest } from '../types/expressRequest.interface';
+import * as Mail from 'nodemailer/lib/mailer';
 import { sign } from 'jsonwebtoken';
+import { MailService } from './../mail/mail.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   /**Register User */
@@ -39,7 +41,11 @@ export class UserService {
 
     newUser.confirmationCode = confirmationCodeToken;
 
-    return this.userRepository.save(newUser);
+    const savedNewUser = await this.userRepository.save(newUser);
+
+    /** 📧 👉 send email for user to activate account */
+    await this.mailService.sendUserConfirmation(savedNewUser, confirmationCodeToken);
+    return savedNewUser;
   }
 
   /**Login User */
@@ -93,28 +99,6 @@ export class UserService {
     return `This action removes a #${id} user`;
   }
 
-  // async getRefreshToken(userId: number): Promise<string> {
-  //   const user = await this.userRepository.findOne();
-  // }
-
-  async validateUser(email: string, pass: string): Promise<UserEntity> {
-    const user = await this.userRepository.findOne(
-      { email },
-      { select: ['id', 'name', 'email', 'password', 'refreshToken', 'refreshTokenExp'] },
-    );
-    if (!user) {
-      throw new HttpException('Invalid login credentials', HttpStatus.BAD_REQUEST);
-    }
-
-    const match = await compare(pass, user.password);
-
-    if (!match) {
-      throw new HttpException('Invalid login credentials', HttpStatus.BAD_REQUEST);
-    }
-
-    return user;
-  }
-
   async getJwtToken(user: UserEntity): Promise<string> {
     const payload = {
       ...user,
@@ -122,6 +106,7 @@ export class UserService {
     return this.jwtService.signAsync(payload);
   }
 
+  /** Generate a refresh token */
   async getRefreshToken(userId: number): Promise<string> {
     const userDataToUpdate = {
       refreshToken: randomToken.generate(16),
@@ -132,6 +117,7 @@ export class UserService {
     return userDataToUpdate.refreshToken;
   }
 
+  /** Use by RefreshStrategy */
   async validateRefreshToken(email: string, refreshToken: string): Promise<UserEntity> {
     const currentDate = moment().format('YYYY/MM/DD');
 
@@ -156,6 +142,7 @@ export class UserService {
     return User;
   }
 
+  /** Use by LocalStrategy */
   async validateUserCredentials(email: string, password: string): Promise<UserEntity> {
     const user = await this.userRepository.findOne(
       { email },

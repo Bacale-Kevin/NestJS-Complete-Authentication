@@ -23,8 +23,9 @@
     "typeorm1": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config src/ormconfig.ts"
   },
   "dependencies": {
-    "@nestjs-modules/mailer": "^1.6.0",
+    "@nestjs-modules/mailer": "^1.5.1",
     "@nestjs/common": "^8.0.0",
+    "@nestjs/config": "^1.1.5",
     "@nestjs/core": "^8.0.0",
     "@nestjs/jwt": "^8.0.0",
     "@nestjs/mapped-types": "^1.0.0",
@@ -38,6 +39,7 @@
     "class-validator": "^0.13.2",
     "cookie-parser": "^1.4.6",
     "csurf": "^1.11.0",
+    "dotenv": "^10.0.0",
     "express-jwt": "^6.1.0",
     "handlebars": "^4.7.7",
     "jwt-decode": "^3.1.2",
