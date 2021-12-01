@@ -161,6 +161,7 @@ export class UserService {
 
     const hashedPassword: any = await hash(password.password, 10);
     user.password = hashedPassword;
+    user.confirmationCode = '';
 
     await this.userRepository.save(user);
   }
