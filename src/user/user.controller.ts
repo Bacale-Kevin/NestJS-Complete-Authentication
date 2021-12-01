@@ -122,7 +122,7 @@ export class UserController {
     });
   }
 
-  /**Verify reset token validity */
+  /**Verify reset password token validity */
   @Get('forgot-password/verify/:token')
   async verifyResetPasswordToken(
     @Param('token') token: string,

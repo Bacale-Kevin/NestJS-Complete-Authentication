@@ -13,20 +13,18 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
 import { compare } from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import * as randomToken from 'rand-token';
 import * as moment from 'moment';
 import { sign, verify } from 'jsonwebtoken';
 import { MailService } from './../mail/mail.service';
 import { hash } from 'bcrypt';
-import jwtDecode from 'jwt-decode';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
-    private jwtService: JwtService,
+    // private jwtService: JwtService,
     private mailService: MailService,
   ) {}
 
