@@ -12,9 +12,10 @@ import {
   UseGuards,
   Req,
   HttpCode,
+  Put,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, ResendEmailDto } from './dto/create-user.dto';
+import { CreateUserDto, ResendEmailDto, ResetPasswordDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -41,6 +42,7 @@ export class UserController {
   @UseGuards(AuthGuard('local')) //strategy use to handle login request
   async login(@Req() req: ExpresRequest, @Res({ passthrough: true }) res: Response): Promise<any> {
     const token = await this.userService.getJwtToken(req.user);
+
     const refreshToken = await this.userService.getRefreshToken(req.user.id);
 
     const secretData = {
@@ -102,6 +104,45 @@ export class UserController {
       success: true,
       message: `Email sent to ${emailDto.email}, checkout your email inbox to activate your account`,
     });
+  }
+
+  /**Forgot password email reset link */
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe())
+  @Post('forgot-password')
+  async sendForgotPasswordEmailResetLink(
+    @Body() emailDto: ResendEmailDto,
+    @Res() res: Response,
+  ): Promise<any> {
+    await this.userService.forgotPassword(emailDto);
+
+    return res.json({
+      success: true,
+      message: `Email sent to ${emailDto.email}, checkout your email inbox to reset your password`,
+    });
+  }
+
+  /**Verify reset token validity */
+  @Get('forgot-password/verify/:token')
+  async verifyResetPasswordToken(
+    @Param('token') token: string,
+    @Res() res: Response,
+  ): Promise<any> {
+    await this.userService.verifyResetPasswordToken(token);
+
+    return res.json({ success: true, message: 'Reset password link verified successfully' });
+  }
+
+  /**Insert new password */
+  @Put('forgot-password/new/:token')
+  async enterNewPassword(
+    @Body() passwordDto: ResetPasswordDto,
+    @Param('token') token: string,
+    @Res() res: Response,
+  ): Promise<any> {
+    await this.userService.enterNewPassword(token, passwordDto);
+
+    return res.json({ success: true, message: 'Your password has been reset successfully' });
   }
 
   /********************************************** USER **************************************/

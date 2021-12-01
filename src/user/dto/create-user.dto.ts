@@ -18,3 +18,8 @@ export class ResendEmailDto {
   @IsNotEmpty()
   readonly email: string;
 }
+
+export class ResetPasswordDto {
+  @IsNotEmpty()
+  readonly password: string;
+}

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
-import { CreateUserDto, ResendEmailDto } from './dto/create-user.dto';
+import { CreateUserDto, ResendEmailDto, ResetPasswordDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -43,7 +43,7 @@ export class UserService {
     const confirmationCodeToken = sign(
       { id: newUser.id, email: createUserDto.email },
       process.env.JWT_CONFIRMATION_TOKEN_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '1h' }, //👈 confirmation code  token expiration
     );
 
     newUser.confirmationCode = confirmationCodeToken;
@@ -105,7 +105,7 @@ export class UserService {
 
     if (!user) throw new NotFoundException('User with this email does not exist');
 
-    /**Generate a confirmation token code that will be use to validate users email address  */
+    /**Generate a confirmation token code that will be use to validate users token */
     const confirmationCodeToken = sign(
       { id: user.id, email: emailDto.email },
       process.env.JWT_CONFIRMATION_TOKEN_SECRET,
@@ -117,6 +117,52 @@ export class UserService {
 
     /** 📧 👇 send email for user to activate account */
     await this.mailService.sendUserConfirmation(savedUser, confirmationCodeToken);
+  }
+
+  async forgotPassword(emailDto: ResendEmailDto): Promise<any> {
+    const user = await this.userRepository.findOne({ email: emailDto.email });
+
+    if (!user) throw new NotFoundException('User with this email does not exist');
+
+    /**Generate a confirmation token code that will be use to validate users token */
+    const confirmationCodeToken = sign(
+      { id: user.id, email: emailDto.email },
+      process.env.JWT_CONFIRMATION_TOKEN_SECRET,
+      { expiresIn: '1h' },
+    );
+    user.confirmationCode = confirmationCodeToken;
+
+    const savedUser = await this.userRepository.save(user);
+
+    /** 📧 👇 send email for user to reset password */
+    await this.mailService.sendForgotPasswordConfirmation(savedUser, confirmationCodeToken);
+  }
+
+  /**Verify reset password token validity  */
+  async verifyResetPasswordToken(token: string): Promise<any> {
+    const decoded: any = verify(token, process.env.JWT_CONFIRMATION_TOKEN_SECRET);
+
+    if (!decoded) {
+      throw new UnprocessableEntityException('failed to verify reset password link');
+    }
+
+    const user = await this.userRepository.findOne({ email: decoded.email });
+
+    await this.userRepository.save(user);
+  }
+
+  async enterNewPassword(token: string, password: ResetPasswordDto): Promise<any> {
+    const decoded: any = verify(token, process.env.JWT_CONFIRMATION_TOKEN_SECRET);
+
+    if (!decoded) {
+      throw new UnprocessableEntityException('failed to verify reset password link');
+    }
+
+    const user = await this.userRepository.findOne({ email: decoded.email });
+
+    Object.assign(user, password);
+
+    await this.userRepository.save(user);
   }
 
   async findAll(): Promise<any> {
@@ -145,7 +191,7 @@ export class UserService {
     const payload = {
       ...user,
     };
-    return this.jwtService.signAsync(payload);
+    return sign(payload, process.env.JWT_SECRET, { expiresIn: 60 });
   }
 
   /** Generate a refresh token */
@@ -155,22 +201,22 @@ export class UserService {
       refreshTokenExp: moment().day(1).format('YYYY/MM/DD'),
     };
 
-    await this.userRepository.update(userId, userDataToUpdate);
+    /**👇important the refresh and refresh token expiration token needs to be save in the db */
+    await this.userRepository.update(userId, userDataToUpdate); //👈 save
     return userDataToUpdate.refreshToken;
   }
 
   /** Use by RefreshStrategy */
   async validateRefreshToken(email: string, refreshToken: string): Promise<UserEntity> {
-    const currentDate = moment().format('YYYY/MM/DD');
-
+    const currantDate = moment().format('YYYY/MM/DD');
     const user = await this.userRepository.findOne({
       where: {
         email: email,
         refreshToken: refreshToken,
-        refreshTokenExp: MoreThanOrEqual(currentDate),
+        refreshTokenExp: MoreThanOrEqual(currantDate),
       },
     });
-
+    console.log('user --> ', user);
     if (!user) {
       return null;
     }
