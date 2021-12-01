@@ -19,6 +19,7 @@ import * as randomToken from 'rand-token';
 import * as moment from 'moment';
 import { sign, verify } from 'jsonwebtoken';
 import { MailService } from './../mail/mail.service';
+import { hash } from 'bcrypt';
 import jwtDecode from 'jwt-decode';
 
 @Injectable()
@@ -160,7 +161,8 @@ export class UserService {
 
     const user = await this.userRepository.findOne({ email: decoded.email });
 
-    Object.assign(user, password);
+    const hashedPassword: any = await hash(password.password, 10);
+    user.password = hashedPassword;
 
     await this.userRepository.save(user);
   }
@@ -191,7 +193,7 @@ export class UserService {
     const payload = {
       ...user,
     };
-    return sign(payload, process.env.JWT_SECRET, { expiresIn: 60 });
+    return sign(payload, process.env.JWT_SECRET, { expiresIn: '2d' });
   }
 
   /** Generate a refresh token */
@@ -208,7 +210,7 @@ export class UserService {
 
   /** Use by RefreshStrategy */
   async validateRefreshToken(email: string, refreshToken: string): Promise<UserEntity> {
-    const currantDate = moment().format('YYYY/MM/DD');
+    // const currantDate = moment().format('YYYY/MM/DD');
     const user = await this.userRepository.findOne({
       where: {
         email: email,
@@ -216,7 +218,6 @@ export class UserService {
         refreshTokenExp: MoreThanOrEqual(moment().day(1).format('YYYY/MM/DD')),
       },
     });
-    console.log('user --> ', user);
     if (!user) {
       return null;
     }
@@ -242,6 +243,7 @@ export class UserService {
     }
 
     const match = await compare(password, user.password);
+    console.log(match);
 
     if (!match) {
       return null;
