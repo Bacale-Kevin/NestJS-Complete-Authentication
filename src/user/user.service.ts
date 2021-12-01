@@ -213,7 +213,7 @@ export class UserService {
       where: {
         email: email,
         refreshToken: refreshToken,
-        refreshTokenExp: MoreThanOrEqual(currantDate),
+        refreshTokenExp: MoreThanOrEqual(moment().day(1).format('YYYY/MM/DD')),
       },
     });
     console.log('user --> ', user);
